@@ -627,6 +627,19 @@ impl Block for Memory {
             Memtype::Swap => self.output.1.set_text(output_text),
         }
 
+
+        // Fix the bug where it doesn't actually display the state of the 
+        // memory properly for some completely totally bizarre reason
+        let mem_total = Unit::KiB(mem_state.mem_total());
+        let mem_free = Unit::KiB(mem_state.mem_free());
+        let mem_total_used = Unit::KiB(mem_total.n() - mem_free.n());
+
+        self.output.0.set_state(match mem_total_used.percent(mem_total) {
+            x if f64::from(x) > self.critical.0 => State::Critical,
+            x if f64::from(x) > self.warning.0 => State::Warning,
+            _ => State::Idle,
+        });
+
         if_debug!({
             let mut f = OpenOptions::new()
                 .create(true)
