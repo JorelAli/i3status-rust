@@ -94,7 +94,9 @@ lazy_static! {
         // Same as time symbol.
         "uptime" => " \u{f017} ",
         "gpu" => " \u{f26c} ",
-        "mail" => " \u{f0e0} "
+        "mail" => " \u{f0e0} ",
+        "moon" => " \u{f186}",
+        "sun" => " \u{f185} "
     };
 
     pub static ref MATERIAL: Map<String, String> = map_to_owned! {
