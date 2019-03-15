@@ -11,7 +11,7 @@ use de::deserialize_duration;
 use errors::*;
 use widgets::text::TextWidget;
 use widgets::graph::GraphWidget;
-use widget::I3BarWidget;
+use widget::{I3BarWidget, State};
 use scheduler::Task;
 
 use uuid::Uuid;
@@ -396,6 +396,7 @@ impl Block for Net {
         if !is_up {
             self.active = false;
             self.network.set_text("×".to_string());
+            self.network.set_state(State::Critical);
             if let Some(ref mut tx_widget) = self.output_tx {
                 tx_widget.set_text("×".to_string());
             };
@@ -407,6 +408,7 @@ impl Block for Net {
         } else {
             self.active = true;
             self.network.set_text("".to_string());
+            self.network.set_state(State::Idle);
         }
 
         // Update SSID and IP address every 30s and the bitrate every 10s
