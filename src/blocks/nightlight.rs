@@ -23,6 +23,7 @@ pub struct NightLight {
     icon_off: String,
     update_interval: Option<Duration>,
     toggled: bool,
+    color_temperature: usize,
     id: String,
 }
 
@@ -53,6 +54,9 @@ pub struct NightLightConfig {
     #[serde(default = "NightLightConfig::default_icon_off")]
     pub icon_off: String,
 
+    #[serde(default = "NightLightConfig::default_color_temperature")]
+    pub color_temperature: usize,
+
     /// Text to display in i3bar for this block
     pub text: Option<String>,
 }
@@ -78,6 +82,10 @@ impl NightLightConfig {
     fn default_icon_off() -> String {
         "sun".to_owned()
     }
+
+    fn default_color_temperature() -> usize {
+        4500
+    }
 }
 
 impl ConfigBlock for NightLight {
@@ -95,6 +103,7 @@ impl ConfigBlock for NightLight {
             id,
             toggled: false,
             update_interval: block_config.interval,
+            color_temperature: block_config.color_temperature,
         })
     }
 }
@@ -137,6 +146,7 @@ impl Block for NightLight {
                     self.toggled = true;
                     self.text.set_icon(self.icon_on.as_str());
                     self.text.set_state(State::Warning);
+                    self.command_on = self.command_on.replace("4500", &self.color_temperature.to_string());
                     &self.command_on
                 };
 
