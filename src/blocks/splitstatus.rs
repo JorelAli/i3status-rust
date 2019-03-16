@@ -7,7 +7,7 @@ use block::{Block, ConfigBlock};
 use config::Config;
 use errors::*;
 use widgets::text::TextWidget;
-use widget::I3BarWidget;
+use widget::{I3BarWidget, State};
 use scheduler::Task;
 
 use uuid::Uuid;
@@ -16,33 +16,23 @@ extern crate i3ipc;
 use self::i3ipc::I3EventListener;
 use self::i3ipc::Subscription;
 use self::i3ipc::event::Event;
-//use self::i3ipc::event::inner::{WindowChange, WorkspaceChange};
 
 pub struct SplitStatus {
     text: TextWidget,
     title: Arc<Mutex<String>>,
-    max_width: usize,
     id: String,
 }
 
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
-pub struct SplitStatusConfig {
-    /// Truncates titles if longer than max-width
-    #[serde(default = "SplitStatusConfig::default_max_width")]
-    pub max_width: usize,
-}
+pub struct SplitStatusConfig {}
 
-impl SplitStatusConfig {
-    fn default_max_width() -> usize {
-        21
-    }
-}
+impl SplitStatusConfig {}
 
 impl ConfigBlock for SplitStatus {
     type Config = SplitStatusConfig;
 
-    fn new(block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
+    fn new(_block_config: Self::Config, config: Config, tx: Sender<Task>) -> Result<Self> {
         let id = Uuid::new_v4().simple().to_string();
         let id_clone = id.clone();
 
@@ -54,15 +44,12 @@ impl ConfigBlock for SplitStatus {
             let mut listener = I3EventListener::connect().unwrap();
 
             // subscribe to a couple events.
-            let subs = [Subscription::Window, Subscription::Workspace, Subscription::Binding];
+            let subs = [Subscription::Binding];
             listener.subscribe(&subs).unwrap();
 
             // handle them
             for event in listener.listen() {
                 match event.unwrap() {
-//BindingEvent(BindingEventInfo { change: Run, binding: Binding { command: "split h", event_state_mask: ["Mod4"], input_code: 0, symbol: Some("h"), input_type: Keyboard } })
-
-//BindingEvent(BindingEventInfo { change: Run, binding: Binding { command: "split v", event_state_mask: ["Mod4"], input_code: 0, symbol: Some("v"), input_type: Keyboard } })
                     Event::BindingEvent(e) => {
                         let the_command = e.binding.command;
                         match the_command.as_ref() {
@@ -94,7 +81,6 @@ impl ConfigBlock for SplitStatus {
         Ok(SplitStatus {
             id,
             text: TextWidget::new(config),
-            max_width: block_config.max_width,
             title,
         })
     }
@@ -103,12 +89,25 @@ impl ConfigBlock for SplitStatus {
 
 impl Block for SplitStatus {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let mut string = (*self.title
+        let string = (*self.title
             .lock()
             .block_error("focused_window", "failed to acquire lock")?)
             .clone();
-        string = string.chars().take(self.max_width).collect();
-        self.text.set_text(string);
+        match string.as_ref() {
+            "splith" => {
+                self.text.set_icon("horizontal");
+                self.text.set_state(State::Good);
+            },
+            "splitv" => {
+                self.text.set_icon("vertical");
+                self.text.set_state(State::Info);
+            },
+            _ => {
+                self.text.set_icon("horizontal");
+                self.text.set_state(State::Good);
+            }
+
+        }
         Ok(None)
     }
 
