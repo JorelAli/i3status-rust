@@ -10,7 +10,7 @@ use de::deserialize_opt_duration;
 use errors::*;
 use widgets::button::ButtonWidget;
 use widget::{I3BarWidget, State};
-use input::I3BarEvent;
+use input::{I3BarEvent, MouseButton};
 
 use uuid::Uuid;
 
@@ -68,7 +68,7 @@ impl NightLightConfig {
     }
 
     fn default_command_on() -> String {
-        "redshift -O 4500K".to_owned()
+        "redshift -PO 4500K".to_owned()
     }
 
     fn default_command_off() -> String {
@@ -110,22 +110,12 @@ impl ConfigBlock for NightLight {
 
 impl Block for NightLight {
     fn update(&mut self) -> Result<Option<Duration>> {
-        let output = Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
-            .args(&["-c", &self.command_state])
-            .output()
-            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned())
-            .unwrap_or_else(|e| e.description().to_owned());
-
-        self.text.set_icon(match output.trim_left() {
-            "" => {
-                self.toggled = false;
-                self.icon_off.as_str()
-            }
-            _ => {
-                self.toggled = true;
-                self.icon_on.as_str()
-            }
-        });
+        
+        if self.toggled {
+            self.text.set_icon(self.icon_on.as_str());
+        } else {
+             self.text.set_icon(self.icon_off.as_str());           
+        }
 
         Ok(self.update_interval)
     }
@@ -137,23 +127,51 @@ impl Block for NightLight {
     fn click(&mut self, e: &I3BarEvent) -> Result<()> {
         if let Some(ref name) = e.name {
             if name.as_str() == self.id {
-                let cmd = if self.toggled {
-                    self.toggled = false;
-                    self.text.set_icon(self.icon_off.as_str());
-                    self.text.set_state(State::Idle);
-                    &self.command_off
-                } else {
-                    self.toggled = true;
-                    self.text.set_icon(self.icon_on.as_str());
-                    self.text.set_state(State::Warning);
-                    self.command_on = self.command_on.replace("4500", &self.color_temperature.to_string());
-                    &self.command_on
-                };
+                self.text.set_text(self.color_temperature.to_string());
+                match e.button {
+                    MouseButton::WheelUp => {
+                        self.color_temperature = self.color_temperature + 200;
+                        if self.color_temperature > 25000 {
+                            self.color_temperature = 25000;
+                        }
+                        Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+                            .args(&["-c", &self.command_on.replace("4500", &self.color_temperature.to_string())])
+                            .output()
+                            .block_error("toggle", "failed to run toggle command")?;
+                    }
+                    MouseButton::WheelDown => {
+                        self.color_temperature = self.color_temperature - 200;
+                        if self.color_temperature < 1000 {
+                            self.color_temperature = 1000;
+                        }
+                        Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+                            .args(&["-c", &self.command_on.replace("4500", &self.color_temperature.to_string())])
+                            .output()
+                            .block_error("toggle", "failed to run toggle command")?;
+                    }
+                    MouseButton::Left => {
+                        let cmd = if self.toggled {
+                            self.color_temperature = 4500;
+                            self.toggled = false;
+                            self.text.set_text("");
+                            self.text.set_icon(self.icon_off.as_str());
+                            self.text.set_state(State::Idle);
+                            &self.command_off
+                        } else {
+                            self.toggled = true;
+                            self.text.set_icon(self.icon_on.as_str());
+                            self.text.set_state(State::Warning);
+                            self.command_on = self.command_on.replace("4500", &self.color_temperature.to_string());
+                            &self.command_on
+                        };
 
-                Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
-                    .args(&["-c", cmd])
-                    .output()
-                    .block_error("toggle", "failed to run toggle command")?;
+                        Command::new(env::var("SHELL").unwrap_or("sh".to_owned()))
+                            .args(&["-c", cmd])
+                            .output()
+                            .block_error("toggle", "failed to run toggle command")?;
+                    }
+                    _ => ()
+                }
             }
         }
 

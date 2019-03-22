@@ -98,7 +98,7 @@ lazy_static! {
         "moon" => " \u{f186}",
         "sun" => " \u{f185} ",
         "horizontal" => " \u{f141} ",
-        "vertical" => " \u{f142} "
+        "vertical" => "  \u{f142}  "
     };
 
     pub static ref MATERIAL: Map<String, String> = map_to_owned! {
