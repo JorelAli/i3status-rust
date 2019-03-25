@@ -20,6 +20,7 @@ pub struct NetworkDevice {
     device: String,
     device_path: PathBuf,
     wireless: bool,
+    tun: bool,
 }
 
 impl NetworkDevice {
@@ -39,11 +40,13 @@ impl NetworkDevice {
 
         // I don't believe that this should ever change, so set it now:
         let wireless = device_path.join("wireless").exists();
+        let tun = device_path.join("tun_flags").exists();
 
         Ok(NetworkDevice {
             device,
             device_path,
             wireless,
+            tun,
         })
     }
 
@@ -55,6 +58,8 @@ impl NetworkDevice {
             // It seems more reasonable to treat these as inactive networks as
             // opposed to erroring out the entire block.
             Ok(false)
+        } else if self.tun {
+            Ok(true)
         } else {
             let operstate = read_file(&operstate_file)?;
             Ok(operstate == "up")
