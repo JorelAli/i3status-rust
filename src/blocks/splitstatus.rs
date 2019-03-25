@@ -86,17 +86,26 @@ impl ConfigBlock for SplitStatus {
                     Event::WindowEvent(win_eventinfo) => {
                         let current_id = win_eventinfo.container.id;
                         let mut container_mapping = container_mapping_original.lock().unwrap();
+                        let mut container_mapping_clone = container_mapping.clone();
+                        //Set the current window (global variable) as the current window ID from
+                        //this event.
                         let mut current_window = current_window_original.lock().unwrap();
-                        *current_window = current_id;
                         match win_eventinfo.change {
                             WindowChange::New => {
-                                container_mapping.insert(current_id, false);
+                                //New windows automatically inherit the current state
+                                //as their parents
+                                let mut parent_state = container_mapping_clone.get(&current_window).unwrap_or(&false);
+                                container_mapping.insert(current_id, *parent_state);
+                                *current_window = current_id;
                                 tx.send(Task {
                                     id: id_clone.clone(),
                                     update_time: Instant::now(),
                                 });
                             },
                             WindowChange::Close => {
+                                *current_window = current_id;
+                                //When we close a window, remove it from the HashMap
+                                //as it is no longer needed.
                                 container_mapping.remove(&current_id);
                                 tx.send(Task {
                                     id: id_clone.clone(),
@@ -104,6 +113,13 @@ impl ConfigBlock for SplitStatus {
                                 });
                             },
                             WindowChange::Focus => {
+                                *current_window = current_id;
+                                //There is a chance that we focus on a window which doesn't
+                                //exist in the current HashMap. If so, add it to that 
+                                //HashMap.
+                                if !container_mapping.contains_key(&current_id) {
+                                    container_mapping.insert(current_id, false);
+                                }
                                 tx.send(Task {
                                     id: id_clone.clone(),
                                     update_time: Instant::now(),
