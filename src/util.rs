@@ -131,7 +131,8 @@ pub fn print_blocks(order: &[String], block_map: &HashMap<String, &mut Block>, c
         };
 
         let separator = json!({
-                    "full_text": config.theme.separator,
+                  //"full_text": config.theme.separator,
+                    "full_text": format!("<span font=\"DejaVu Sans Mono\">{}</span>", config.theme.separator),
                     "separator": false,
                     "separator_block_width": 0,
                     "background": if sep_bg.is_some() { Value::String(sep_bg.unwrap()) } else { Value::Null },

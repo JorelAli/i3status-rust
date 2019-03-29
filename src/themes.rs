@@ -33,7 +33,7 @@ lazy_static! {
         separator: "\u{e0b2}".to_owned(),
         separator_bg: "auto".to_owned(),
         separator_fg: "auto".to_owned(),
-        alternating_tint_bg: "#000000".to_owned(),
+        alternating_tint_bg: "#11111105".to_owned(),
         alternating_tint_fg: "#000000".to_owned(),
     };
 
