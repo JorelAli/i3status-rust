@@ -331,9 +331,7 @@ impl Memory {
         let swap_used = Unit::KiB(mem_state.swap_total() - mem_state.swap_free());
         let mem_total_used = Unit::KiB(mem_total.n() - mem_free.n());
         let buffers = Unit::KiB(mem_state.buffers());
-        let cached = Unit::KiB(
-            mem_state.cached() + mem_state.s_reclaimable() - mem_state.shmem(),
-        );
+        let cached = Unit::KiB(mem_state.cached() + mem_state.s_reclaimable() - mem_state.shmem(),);
         let mem_used = Unit::KiB(mem_total_used.n() - (buffers.n() + cached.n()));
         let mem_avail = Unit::KiB(mem_total.n() - mem_used.n());
 
@@ -633,8 +631,11 @@ impl Block for Memory {
         let mem_total = Unit::KiB(mem_state.mem_total());
         let mem_free = Unit::KiB(mem_state.mem_free());
         let mem_total_used = Unit::KiB(mem_total.n() - mem_free.n());
+        let buffers = Unit::KiB(mem_state.buffers());
+        let cached = Unit::KiB(mem_state.cached() + mem_state.s_reclaimable() - mem_state.shmem(),);
+        let mem_used = Unit::KiB(mem_total_used.n() - (buffers.n() + cached.n()));
 
-        self.output.0.set_state(match mem_total_used.percent(mem_total) {
+        self.output.0.set_state(match mem_used.percent(mem_total) {
             x if f64::from(x) > self.critical.0 => State::Critical,
             x if f64::from(x) > self.warning.0 => State::Warning,
             _ => State::Idle,
