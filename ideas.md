@@ -22,3 +22,6 @@ programs = ["eclipse"]
 [Rust]
 programs = ["konsole -e ~/github/i3status-rust", "qutebrowser http://www.rustlang.whatever"]
 icon = "whatever fontawesome rust icon"
+
+# Other
+Clickable net blocks: f29da2a1e7c4861c05eb945f3d19099116cff495
