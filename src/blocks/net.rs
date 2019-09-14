@@ -271,7 +271,7 @@ impl NetConfig {
     }
 
     fn default_ssid() -> bool {
-        true 
+        false 
     }
 
     fn default_bitrate() -> bool {
@@ -408,7 +408,7 @@ impl Block for Net {
         } else {
             self.active = true;
             self.network.set_text("".to_string());
-            self.network.set_state(State::Idle);
+            self.network.set_state(State::Good);
         }
 
         // Update SSID and IP address every 30s and the bitrate every 10s
