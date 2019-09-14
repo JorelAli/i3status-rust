@@ -271,7 +271,7 @@ impl NetConfig {
     }
 
     fn default_ssid() -> bool {
-        false
+        true 
     }
 
     fn default_bitrate() -> bool {
